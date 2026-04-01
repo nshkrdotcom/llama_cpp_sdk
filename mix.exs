@@ -29,7 +29,7 @@ defmodule LlamaCppEx.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.38", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
     ]
   end
 
