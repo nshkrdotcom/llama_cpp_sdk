@@ -1,0 +1,63 @@
+# Kernel Integration
+
+## Registration
+
+`llama_cpp_ex` registers `LlamaCppEx.Backend` with
+`self_hosted_inference_core`.
+
+You can register explicitly:
+
+```elixir
+:ok = LlamaCppEx.register_backend()
+```
+
+The application also registers the backend at startup when the package is used
+as a dependency.
+
+## Public Flow
+
+The normal flow is:
+
+1. build or normalize a `BootSpec`
+2. build a `ConsumerManifest`
+3. call `LlamaCppEx.resolve_endpoint/3`
+4. pass the resulting `EndpointDescriptor` northbound to the control plane
+5. let `req_llm` execute requests against the published endpoint
+
+## Example
+
+```elixir
+consumer =
+  SelfHostedInferenceCore.ConsumerManifest.new!(
+    consumer: :jido_integration_req_llm,
+    accepted_runtime_kinds: [:service],
+    accepted_management_modes: [:jido_managed],
+    accepted_protocols: [:openai_chat_completions],
+    required_capabilities: %{streaming?: true},
+    optional_capabilities: %{tool_calling?: :unknown},
+    constraints: %{startup_kind: :spawned},
+    metadata: %{}
+  )
+
+{:ok, resolution} =
+  LlamaCppEx.resolve_endpoint(
+    %{
+      model: "/models/qwen.gguf",
+      alias: "qwen",
+      host: "127.0.0.1",
+      port: 8080
+    },
+    consumer,
+    owner_ref: "run-123",
+    ttl_ms: 30_000
+  )
+```
+
+## What Stays Out Of Scope
+
+`llama_cpp_ex` integrates with the kernel without re-owning:
+
+- transport internals
+- request execution
+- OpenAI payload parsing
+- durable control-plane truth

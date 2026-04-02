@@ -1,12 +1,7 @@
 defmodule LlamaCppExTest do
-  use ExUnit.Case
-  doctest LlamaCppEx
+  use ExUnit.Case, async: true
 
-  test "returns the package status marker" do
-    assert LlamaCppEx.hello() == :world
-  end
-
-  test "returns the project version placeholder" do
-    assert LlamaCppEx.version() == "0.1.0"
+  test "metadata reports the package and backend identity" do
+    assert %{app: :llama_cpp_ex, backend: :llama_cpp, version: _version} = LlamaCppEx.metadata()
   end
 end

@@ -9,7 +9,14 @@ Versioning.
 
 ### Added
 
-- Initialized the `llama_cpp_ex` Elixir package scaffold.
-- Added package metadata for Hex and HexDocs publication.
-- Added a centered SVG brand asset for repository and documentation use.
-- Added a professional README, MIT license, and initial release notes.
+- Built `llama_cpp_ex` into the first concrete backend for the self-hosted
+  inference stack.
+- Added `LlamaCppEx.BootSpec` for `llama-server` boot-spec normalization.
+- Added command rendering for the installed `llama-server` CLI surface.
+- Added readiness and health probes above `external_runtime_transport`.
+- Added backend manifest publication and endpoint resolution through
+  `self_hosted_inference_core`.
+- Added a spawned-endpoint example and fixture coverage for readiness, failure,
+  health, and stop semantics.
+- Added HexDocs guides for architecture, boot spec, readiness, and kernel
+  integration.
