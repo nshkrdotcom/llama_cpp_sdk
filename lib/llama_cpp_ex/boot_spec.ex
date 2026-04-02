@@ -101,6 +101,7 @@ defmodule LlamaCppEx.BootSpec do
          {:ok, api_key} <- normalize_optional_binary(fetch(attrs, :api_key, nil), :api_key),
          {:ok, api_key_file} <-
            normalize_optional_binary(fetch(attrs, :api_key_file, nil), :api_key_file),
+         {:ok, headers} <- normalize_endpoint_headers(api_key, api_key_file),
          {:ok, timeout_seconds} <-
            normalize_optional_pos_integer(fetch(attrs, :timeout_seconds, nil), :timeout_seconds),
          {:ok, threads_http} <-
@@ -166,7 +167,7 @@ defmodule LlamaCppEx.BootSpec do
          root_url: root_url,
          base_url: root_url <> api_prefix <> "/v1",
          health_url: root_url <> "/health",
-         headers: endpoint_headers(api_key)
+         headers: headers
        }}
     end
   end
@@ -316,10 +317,29 @@ defmodule LlamaCppEx.BootSpec do
 
   defp normalize_execution_surface(nil), do: {:ok, [surface_kind: :local_subprocess]}
 
-  defp normalize_execution_surface(%ExternalRuntimeTransport.ExecutionSurface{} = surface),
-    do: {:ok, surface}
+  defp normalize_execution_surface(
+         %ExternalRuntimeTransport.ExecutionSurface{
+           surface_kind: :local_subprocess
+         } = surface
+       ),
+       do: {:ok, surface}
 
-  defp normalize_execution_surface(surface) when is_list(surface), do: {:ok, surface}
+  defp normalize_execution_surface(%ExternalRuntimeTransport.ExecutionSurface{
+         surface_kind: surface_kind
+       }),
+       do: {:error, {:unsupported_execution_surface, surface_kind}}
+
+  defp normalize_execution_surface(surface) when is_list(surface) do
+    if Keyword.keyword?(surface) do
+      case Keyword.get(surface, :surface_kind, :local_subprocess) do
+        :local_subprocess -> {:ok, surface}
+        surface_kind -> {:error, {:unsupported_execution_surface, surface_kind}}
+      end
+    else
+      {:error, {:execution_surface, surface}}
+    end
+  end
+
   defp normalize_execution_surface(surface), do: {:error, {:execution_surface, surface}}
 
   defp normalize_env(env) when is_map(env) do
@@ -341,8 +361,26 @@ defmodule LlamaCppEx.BootSpec do
   defp normalize_metadata(metadata) when is_map(metadata), do: {:ok, metadata}
   defp normalize_metadata(metadata), do: {:error, {:metadata, metadata}}
 
-  defp endpoint_headers(nil), do: %{}
-  defp endpoint_headers(api_key), do: %{"authorization" => "Bearer " <> api_key}
+  defp normalize_endpoint_headers(api_key, _api_key_file) when is_binary(api_key) do
+    {:ok, authorization_headers(api_key)}
+  end
+
+  defp normalize_endpoint_headers(nil, nil), do: {:ok, %{}}
+
+  defp normalize_endpoint_headers(nil, api_key_file) when is_binary(api_key_file) do
+    case File.read(api_key_file) do
+      {:ok, contents} ->
+        case contents |> String.trim() do
+          "" -> {:error, {:api_key_file, {api_key_file, :empty}}}
+          api_key -> {:ok, authorization_headers(api_key)}
+        end
+
+      {:error, reason} ->
+        {:error, {:api_key_file, {api_key_file, reason}}}
+    end
+  end
+
+  defp authorization_headers(api_key), do: %{"authorization" => "Bearer " <> api_key}
 
   defp build_root_url(host, port) do
     formatted_host =

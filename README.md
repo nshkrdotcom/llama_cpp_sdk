@@ -44,6 +44,7 @@ The first backend release is intentionally narrow and truthful:
 
 - supported startup kind: `:spawned`
 - supported execution surface: `:local_subprocess`
+- non-local execution surfaces: rejected during boot-spec normalization
 - published protocol: `:openai_chat_completions`
 - northbound integration: `self_hosted_inference_core`
 - `:ssh_exec` story: documented as a future additive path once remote model-path
@@ -138,6 +139,8 @@ The first release supports normalized fields for the installed
 - `extra_args`
 
 See [`guides/boot_spec.md`](guides/boot_spec.md) for the full contract.
+When `api_key_file` is provided, `llama_cpp_ex` reads it to derive the
+published authorization header for northbound clients.
 
 ## Readiness And Health
 

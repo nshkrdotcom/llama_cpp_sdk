@@ -61,3 +61,7 @@ consumer =
 - request execution
 - OpenAI payload parsing
 - durable control-plane truth
+
+The published endpoint descriptor carries authorization headers derived from
+`api_key` or `api_key_file`, but request execution still stays northbound in
+`req_llm`.

@@ -62,4 +62,5 @@ The first release supports one truthful runtime posture:
 
 `llama-server` can be launched remotely later, but `:ssh_exec` is not claimed
 yet because remote path semantics, reachability, and shutdown guarantees still
-need backend-specific verification.
+need backend-specific verification. The boot spec rejects those non-local
+surfaces instead of silently accepting them.

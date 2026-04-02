@@ -39,6 +39,9 @@ The first release normalizes these fields:
 - `extra_args`
 - `metadata`
 
+`execution_surface` is intentionally narrow in the first release:
+only `:local_subprocess` is accepted.
+
 ## Derived Fields
 
 Normalization also derives endpoint-facing fields:
@@ -50,6 +53,8 @@ Normalization also derives endpoint-facing fields:
 
 That keeps endpoint publication deterministic and avoids re-deriving URLs in
 multiple modules.
+`headers` are derived from either `api_key` or the contents of `api_key_file`
+so the published endpoint remains directly usable by northbound clients.
 
 ## Instance Identity
 
@@ -66,5 +71,6 @@ Additive metadata does not affect the instance key.
 
 ## Unsupported In The First Release
 
-The first release rejects Unix-socket hosts and does not claim `:ssh_exec`.
+The first release rejects Unix-socket hosts and rejects non-local execution
+surfaces such as `:ssh_exec`.
 Those are additive future paths, not hidden partial support.

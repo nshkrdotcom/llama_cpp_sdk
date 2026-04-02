@@ -38,6 +38,25 @@ defmodule LlamaCppEx.BootSpecTest do
     assert spec.environment["LLAMA_CACHE"] == "/tmp/llama-cache"
   end
 
+  test "derives endpoint headers from api_key_file for northbound clients" do
+    api_key_file = Path.join(System.tmp_dir!(), "llama_cpp_ex_api_key_#{System.unique_integer()}")
+
+    on_exit(fn ->
+      File.rm(api_key_file)
+    end)
+
+    File.write!(api_key_file, "file-token\n")
+
+    assert {:ok, spec} =
+             BootSpec.new(
+               model: "/models/demo.gguf",
+               api_key_file: api_key_file
+             )
+
+    assert spec.api_key_file == api_key_file
+    assert spec.headers == %{"authorization" => "Bearer file-token"}
+  end
+
   test "renders the normalized boot spec into a llama-server command" do
     spec =
       BootSpec.new!(
@@ -129,5 +148,13 @@ defmodule LlamaCppEx.BootSpecTest do
   test "rejects unix socket hosts for the first HTTP endpoint release" do
     assert {:error, {:unsupported_host, "/tmp/llama.sock"}} =
              BootSpec.new(model: "/models/demo.gguf", host: "/tmp/llama.sock")
+  end
+
+  test "rejects non-local execution surfaces for the first backend release" do
+    assert {:error, {:unsupported_execution_surface, :ssh_exec}} =
+             BootSpec.new(
+               model: "/models/demo.gguf",
+               execution_surface: [surface_kind: :ssh_exec]
+             )
   end
 end
