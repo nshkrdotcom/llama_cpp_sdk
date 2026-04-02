@@ -90,6 +90,7 @@ defmodule LlamaCppEx.BackendIntegrationTest do
              protocol: :openai_chat_completions,
              provider_identity: :llama_cpp,
              model_identity: "fixture-qwen",
+             source_runtime: :llama_cpp_ex,
              base_url: "http://127.0.0.1:" <> _rest
            } = resolution.endpoint
 
@@ -118,6 +119,34 @@ defmodule LlamaCppEx.BackendIntegrationTest do
 
     assert File.read!(args_path) =~ "\"api_prefix\": \"/managed\""
     assert File.read!(args_path) =~ "\"alias\": \"fixture-qwen\""
+
+    assert {:ok, 200, completion_body} =
+             post_json(
+               resolution.endpoint.base_url <> "/chat/completions",
+               %{
+                 model: "fixture-qwen",
+                 messages: [%{role: "user", content: "phase 4 contract"}],
+                 stream: false
+               },
+               resolution.endpoint.headers
+             )
+
+    assert completion_body["choices"] |> List.first() |> get_in(["message", "content"]) ==
+             "Fake llama response: phase 4 contract"
+
+    assert {:ok, 200, stream_body} =
+             post_sse(
+               resolution.endpoint.base_url <> "/chat/completions",
+               %{
+                 model: "fixture-qwen",
+                 messages: [%{role: "user", content: "phase 4 streaming contract"}],
+                 stream: true
+               },
+               resolution.endpoint.headers
+             )
+
+    assert stream_body =~ "Fake llama response: phase 4 streaming contract"
+    assert stream_body =~ "[DONE]"
   end
 
   test "tracks degraded health after endpoint publication" do
@@ -248,6 +277,40 @@ defmodule LlamaCppEx.BackendIntegrationTest do
 
       _pid ->
         :ok
+    end
+  end
+
+  defp post_json(url, payload, headers) do
+    request_headers =
+      headers
+      |> Enum.map(fn {key, value} -> {String.to_charlist(key), String.to_charlist(value)} end)
+
+    request =
+      {String.to_charlist(url), request_headers, ~c"application/json", Jason.encode!(payload)}
+
+    case :httpc.request(:post, request, [], body_format: :binary) do
+      {:ok, {{_, status, _}, _response_headers, body}} ->
+        {:ok, status, Jason.decode!(body)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp post_sse(url, payload, headers) do
+    request_headers =
+      headers
+      |> Enum.map(fn {key, value} -> {String.to_charlist(key), String.to_charlist(value)} end)
+
+    request =
+      {String.to_charlist(url), request_headers, ~c"application/json", Jason.encode!(payload)}
+
+    case :httpc.request(:post, request, [], body_format: :binary) do
+      {:ok, {{_, status, _}, _response_headers, body}} ->
+        {:ok, status, body}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 end

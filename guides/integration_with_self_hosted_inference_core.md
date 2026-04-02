@@ -20,9 +20,11 @@ The normal flow is:
 
 1. build or normalize a `BootSpec`
 2. build a `ConsumerManifest`
-3. call `LlamaCppEx.resolve_endpoint/3`
+3. call `LlamaCppEx.resolve_endpoint/3` or let
+   `SelfHostedInferenceCore.ensure_endpoint/4` derive the `InstanceSpec`
 4. pass the resulting `EndpointDescriptor` northbound to the control plane
-5. let `req_llm` execute requests against the published endpoint
+5. let `req_llm` execute requests against `endpoint.base_url` with the
+   published headers
 
 ## Example
 

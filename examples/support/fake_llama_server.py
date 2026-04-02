@@ -63,8 +63,157 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(404)
         self.end_headers()
 
+    def do_POST(self):
+        completions_path = f"{self.server.api_prefix}/v1/chat/completions"
+
+        if self.path != completions_path:
+            self.send_response(404)
+            self.end_headers()
+            return
+
+        if self.server.api_key:
+            authorization = self.headers.get("authorization")
+
+            if authorization != f"Bearer {self.server.api_key}":
+                self.send_response(401)
+                self.send_header("content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": {"message": "unauthorized"}}).encode("utf-8"))
+                return
+
+        content_length = int(self.headers.get("content-length", "0"))
+        raw_body = self.rfile.read(content_length)
+        payload = json.loads(raw_body or b"{}")
+        response_text = build_completion_text(payload)
+        model = payload.get("model") or self.server.model_alias
+        prompt_tokens = max(1, len(response_text.split()))
+        completion_tokens = max(1, len(response_text.split()))
+
+        if payload.get("stream"):
+            self.send_response(200)
+            self.send_header("content-type", "text/event-stream")
+            self.send_header("cache-control", "no-cache")
+            self.end_headers()
+
+            for chunk in streaming_chunks(model, response_text):
+                self.wfile.write(f"data: {json.dumps(chunk)}\n\n".encode("utf-8"))
+                self.wfile.flush()
+                time.sleep(0.01)
+
+            self.wfile.write(b"data: [DONE]\n\n")
+            self.wfile.flush()
+            return
+
+        completion = {
+            "id": "chatcmpl_fake_llama_123",
+            "object": "chat.completion",
+            "model": model,
+            "choices": [
+                {
+                    "index": 0,
+                    "finish_reason": "stop",
+                    "message": {
+                        "role": "assistant",
+                        "content": response_text,
+                    },
+                }
+            ],
+            "usage": {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+            },
+        }
+
+        self.send_response(200)
+        self.send_header("content-type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(completion).encode("utf-8"))
+
     def log_message(self, format, *args):
         return
+
+
+def extract_text(value):
+    if isinstance(value, str):
+        return value
+
+    if isinstance(value, list):
+        parts = []
+
+        for item in value:
+            if isinstance(item, dict) and item.get("type") == "text":
+                parts.append(item.get("text", ""))
+
+        return "".join(parts)
+
+    return ""
+
+
+def build_completion_text(payload):
+    messages = payload.get("messages") or []
+    last_user_text = ""
+
+    for message in reversed(messages):
+        if isinstance(message, dict) and message.get("role") == "user":
+            last_user_text = extract_text(message.get("content"))
+
+            if last_user_text:
+                break
+
+    if not last_user_text:
+        last_user_text = "ready"
+
+    return f"Fake llama response: {last_user_text}"
+
+
+def streaming_chunks(model, response_text):
+    parts = split_text(response_text)
+
+    for index, part in enumerate(parts):
+        delta = {"content": part}
+
+        if index == 0:
+            delta["role"] = "assistant"
+
+        yield {
+            "id": "chatcmpl_fake_llama_stream_123",
+            "object": "chat.completion.chunk",
+            "model": model,
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": delta,
+                    "finish_reason": None,
+                }
+            ],
+        }
+
+    yield {
+        "id": "chatcmpl_fake_llama_stream_123",
+        "object": "chat.completion.chunk",
+        "model": model,
+        "choices": [
+            {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": max(1, len(response_text.split())),
+            "completion_tokens": max(1, len(response_text.split())),
+            "total_tokens": max(2, len(response_text.split()) * 2),
+        },
+    }
+
+
+def split_text(value):
+    if not value:
+        return [""]
+
+    midpoint = max(1, len(value) // 2)
+    return [value[:midpoint], value[midpoint:]]
 
 
 def write_args(args, extras):
@@ -145,6 +294,7 @@ def main():
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     server.api_prefix = args.api_prefix
     server.model_alias = args.alias
+    server.api_key = args.api_key
 
     install_signal_handlers(server)
 

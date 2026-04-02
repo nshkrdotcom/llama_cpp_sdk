@@ -38,6 +38,10 @@ It owns the `llama-server` specifics that do not belong in the shared kernel:
 It does not parse OpenAI payloads, token streams, or inference responses.
 Those stay northbound in `req_llm` and the calling control plane.
 
+The phase-1 proof fixture also serves `/v1/chat/completions` with both standard
+JSON and SSE streaming responses so the published endpoint contract can be
+exercised honestly by northbound clients.
+
 ## Current Release Boundary
 
 The first backend release is intentionally narrow and truthful:
@@ -110,6 +114,12 @@ resolution.lease.lease_ref
 The backend normalizes the boot spec, registers itself with
 `self_hosted_inference_core`, and publishes an endpoint descriptor once the
 service is actually ready.
+
+That published descriptor is the northbound contract used by
+`jido_integration`. The caller should execute requests against:
+
+- `endpoint.base_url <> "/chat/completions"` for chat completions
+- `endpoint.headers` for bearer auth or other published headers
 
 ## Supported Boot Fields
 

@@ -65,7 +65,7 @@ defmodule LlamaCppEx.Backend do
            headers: boot_spec.headers,
            provider_identity: :llama_cpp,
            model_identity: boot_spec.model_identity,
-           source_runtime: __MODULE__,
+           source_runtime: :llama_cpp_ex,
            capabilities: endpoint_capabilities(boot_spec),
            metadata: endpoint_metadata(boot_spec)
          },

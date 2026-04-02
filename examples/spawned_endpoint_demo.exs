@@ -75,9 +75,21 @@ try do
 
   IO.puts("Instance:         #{resolution.instance.instance_id}")
   IO.puts("Endpoint:         #{resolution.endpoint.base_url}")
+  IO.puts("Chat URL:         #{resolution.endpoint.base_url}/chat/completions")
   IO.puts("Management mode:  #{inspect(resolution.endpoint.management_mode)}")
+  auth_header = Map.get(resolution.endpoint.headers, "authorization")
+  IO.puts("Auth header:      #{inspect(auth_header)}")
   IO.puts("Lease ref:        #{resolution.lease.lease_ref}")
   IO.puts("Compatibility:    #{inspect(resolution.compatibility.reason)}")
+
+  :ok =
+    SelfHostedInferenceCore.release_lease(
+      resolution.instance.instance_id,
+      resolution.lease.lease_ref
+    )
+
+  :ok = SelfHostedInferenceCore.stop_instance(resolution.instance.instance_id)
 after
+  _ = LlamaCppEx.unregister_backend()
   Support.cleanup!(fixture)
 end
