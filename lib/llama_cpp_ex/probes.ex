@@ -14,7 +14,7 @@ defmodule LlamaCppEx.Probes do
       (health_endpoint_ready?(boot_spec) or models_endpoint_ready?(boot_spec))
   end
 
-  @spec health_status(BootSpec.t()) :: {:ok, health_status()} | {:error, term()}
+  @spec health_status(BootSpec.t()) :: {:ok, health_status()}
   def health_status(%BootSpec{} = boot_spec) do
     case request(boot_spec.health_url, boot_spec.headers) do
       {:ok, 200, body} ->

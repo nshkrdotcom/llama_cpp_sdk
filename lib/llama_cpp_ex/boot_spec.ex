@@ -1,3 +1,5 @@
+# credo:disable-for-this-file Credo.Check.Warning.StructFieldAmount
+
 defmodule LlamaCppEx.BootSpec do
   @moduledoc """
   Canonical `llama-server` boot spec for the first `:spawned` backend release.

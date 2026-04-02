@@ -109,16 +109,18 @@ defmodule LlamaCppEx.BackendIntegrationTest do
 
     args_path = FakeLlamaServerFixture.args_path(fixture)
 
-    assert wait_until(fn ->
-             if File.exists?(args_path) do
-               {:ok, File.read!(args_path)}
-             else
-               :retry
-             end
-           end) =~ "\"port\": #{fixture.port}"
+    assert {:ok, args_json} =
+             wait_until(fn ->
+               if File.exists?(args_path) do
+                 {:ok, File.read!(args_path)}
+               else
+                 :retry
+               end
+             end)
 
-    assert File.read!(args_path) =~ "\"api_prefix\": \"/managed\""
-    assert File.read!(args_path) =~ "\"alias\": \"fixture-qwen\""
+    assert args_json =~ "\"port\": #{fixture.port}"
+    assert args_json =~ "\"api_prefix\": \"/managed\""
+    assert args_json =~ "\"alias\": \"fixture-qwen\""
 
     assert {:ok, 200, completion_body} =
              post_json(
@@ -145,7 +147,9 @@ defmodule LlamaCppEx.BackendIntegrationTest do
                resolution.endpoint.headers
              )
 
-    assert stream_body =~ "Fake llama response: phase 4 streaming contract"
+    assert streamed_text_from_sse(stream_body) ==
+             "Fake llama response: phase 4 streaming contract"
+
     assert stream_body =~ "[DONE]"
   end
 
@@ -177,6 +181,7 @@ defmodule LlamaCppEx.BackendIntegrationTest do
     assert snapshot.health_status == :degraded
   end
 
+  @tag capture_log: true
   test "surfaces early process exit before readiness as a typed backend error" do
     fixture = FakeLlamaServerFixture.new!()
 
@@ -195,6 +200,7 @@ defmodule LlamaCppEx.BackendIntegrationTest do
              LlamaCppEx.ensure_instance(attrs, await_timeout_ms: 2_000)
   end
 
+  @tag capture_log: true
   test "surfaces readiness timeouts when the process never binds an endpoint" do
     fixture = FakeLlamaServerFixture.new!()
 
@@ -230,15 +236,18 @@ defmodule LlamaCppEx.BackendIntegrationTest do
 
     assert :ok = SelfHostedInferenceCore.stop_instance(resolution.instance.instance_id)
 
-    assert wait_until(fn ->
-             signal_path = FakeLlamaServerFixture.signal_path(fixture)
+    assert {:ok, signal_body} =
+             wait_until(fn ->
+               signal_path = FakeLlamaServerFixture.signal_path(fixture)
 
-             if File.exists?(signal_path) do
-               {:ok, File.read!(signal_path)}
-             else
-               :retry
-             end
-           end) =~ "SIGINT"
+               if File.exists?(signal_path) do
+                 {:ok, File.read!(signal_path)}
+               else
+                 :retry
+               end
+             end)
+
+    assert signal_body =~ "SIGINT"
   end
 
   defp req_llm_consumer do
@@ -261,13 +270,37 @@ defmodule LlamaCppEx.BackendIntegrationTest do
   defp wait_until(fun, attempts) do
     case fun.() do
       {:ok, value} ->
-        value
+        {:ok, value}
 
       :retry ->
         Process.sleep(25)
         wait_until(fun, attempts - 1)
     end
   end
+
+  defp streamed_text_from_sse(body) when is_binary(body) do
+    body
+    |> String.split("\n\n", trim: true)
+    |> Enum.reduce("", fn frame, acc -> acc <> sse_frame_text(frame) end)
+  end
+
+  defp sse_frame_text(frame) do
+    frame
+    |> String.trim()
+    |> decode_sse_frame()
+    |> Map.get("content", "")
+  end
+
+  defp decode_sse_frame("data: [DONE]"), do: %{}
+
+  defp decode_sse_frame("data: " <> json) do
+    case Jason.decode(json) do
+      {:ok, %{"choices" => [%{"delta" => delta}]}} -> delta
+      _other -> %{}
+    end
+  end
+
+  defp decode_sse_frame(_frame), do: %{}
 
   defp start_core_supervisor do
     case Process.whereis(SelfHostedInferenceCore.Supervisor) do

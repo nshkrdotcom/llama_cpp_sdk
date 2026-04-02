@@ -2,7 +2,7 @@
 
 ## Registration
 
-`llama_cpp_ex` registers `LlamaCppEx.Backend` with
+`llama_cpp_ex` registers its internal backend implementation with
 `self_hosted_inference_core`.
 
 You can register explicitly:

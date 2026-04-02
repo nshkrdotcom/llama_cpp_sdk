@@ -2,11 +2,9 @@ defmodule LlamaCppEx.Backend do
   @moduledoc false
 
   alias ExternalRuntimeTransport.ProcessExit
-
-  alias SelfHostedInferenceCore.{BackendManifest, InstanceSpec}
   alias SelfHostedInferenceCore.Backend, as: BackendBehaviour
-
   alias SelfHostedInferenceCore.Backend.{StartupPlan, TransportPlan}
+  alias SelfHostedInferenceCore.{BackendManifest, InstanceSpec}
 
   alias LlamaCppEx.{BootSpec, CommandBuilder, Probes, StopStrategy}
 
@@ -132,13 +130,8 @@ defmodule LlamaCppEx.Backend do
 
   @impl BackendBehaviour
   def health_check(%{boot_spec: %BootSpec{} = boot_spec} = state) do
-    case Probes.health_status(boot_spec) do
-      {:ok, health_status} ->
-        {:ok, health_status, %{health_url: boot_spec.health_url}, state}
-
-      {:error, reason} ->
-        {:error, reason, state}
-    end
+    {:ok, health_status} = Probes.health_status(boot_spec)
+    {:ok, health_status, %{health_url: boot_spec.health_url}, state}
   end
 
   @impl BackendBehaviour
@@ -231,15 +224,11 @@ defmodule LlamaCppEx.Backend do
     Keyword.get(surface, :surface_ref) || Keyword.get(surface, :target_id)
   end
 
-  defp boundary_ref(_surface), do: nil
-
   defp surface_kind(%ExternalRuntimeTransport.ExecutionSurface{} = surface),
     do: surface.surface_kind
 
   defp surface_kind(surface) when is_list(surface),
     do: Keyword.get(surface, :surface_kind, :local_subprocess)
-
-  defp surface_kind(_surface), do: :local_subprocess
 
   defp put_recent_event(state, event) do
     update_in(state.recent_events, fn recent_events ->
