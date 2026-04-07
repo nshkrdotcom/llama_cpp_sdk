@@ -1,8 +1,8 @@
-defmodule LlamaCppEx.BootSpecTest do
+defmodule LlamaCppSdk.BootSpecTest do
   use ExUnit.Case, async: true
 
   alias ExternalRuntimeTransport.Command
-  alias LlamaCppEx.{BootSpec, CommandBuilder}
+  alias LlamaCppSdk.{BootSpec, CommandBuilder}
 
   test "normalizes a boot spec into endpoint-ready defaults" do
     assert {:ok, spec} =
@@ -39,7 +39,8 @@ defmodule LlamaCppEx.BootSpecTest do
   end
 
   test "derives endpoint headers from api_key_file for northbound clients" do
-    api_key_file = Path.join(System.tmp_dir!(), "llama_cpp_ex_api_key_#{System.unique_integer()}")
+    api_key_file =
+      Path.join(System.tmp_dir!(), "llama_cpp_sdk_api_key_#{System.unique_integer()}")
 
     on_exit(fn ->
       File.rm(api_key_file)

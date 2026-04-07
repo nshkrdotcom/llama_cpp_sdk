@@ -1,4 +1,4 @@
-defmodule LlamaCppEx.StopStrategy do
+defmodule LlamaCppSdk.StopStrategy do
   @moduledoc false
 
   alias ExternalRuntimeTransport.Transport

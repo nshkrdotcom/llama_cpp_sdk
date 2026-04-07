@@ -7,8 +7,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
-STATE_DIR = os.environ.get("LLAMA_CPP_EX_FAKE_STATE_DIR")
-MODE = os.environ.get("LLAMA_CPP_EX_FAKE_MODE", "ready")
+STATE_DIR = os.environ.get("LLAMA_CPP_SDK_FAKE_STATE_DIR")
+MODE = os.environ.get("LLAMA_CPP_SDK_FAKE_MODE", "ready")
 
 
 def state_path(name: str) -> str:
@@ -256,7 +256,7 @@ def install_signal_handlers(server):
 
 def main():
     if not STATE_DIR:
-        raise SystemExit("LLAMA_CPP_EX_FAKE_STATE_DIR is required")
+        raise SystemExit("LLAMA_CPP_SDK_FAKE_STATE_DIR is required")
 
     os.makedirs(STATE_DIR, exist_ok=True)
 

@@ -1,4 +1,4 @@
-defmodule LlamaCppEx.Backend do
+defmodule LlamaCppSdk.Backend do
   @moduledoc false
 
   alias ExternalRuntimeTransport.ProcessExit
@@ -6,12 +6,12 @@ defmodule LlamaCppEx.Backend do
   alias SelfHostedInferenceCore.Backend.{StartupPlan, TransportPlan}
   alias SelfHostedInferenceCore.{BackendManifest, InstanceSpec}
 
-  alias LlamaCppEx.{BootSpec, CommandBuilder, Probes, StopStrategy}
+  alias LlamaCppSdk.{BootSpec, CommandBuilder, Probes, StopStrategy}
 
   @behaviour BackendBehaviour
 
   @impl BackendBehaviour
-  def backend_id, do: :llama_cpp
+  def backend_id, do: :llama_cpp_sdk
 
   @impl BackendBehaviour
   def manifest do
@@ -33,7 +33,7 @@ defmodule LlamaCppEx.Backend do
         gpu: :optional
       },
       metadata: %{
-        package: :llama_cpp_ex,
+        package: :llama_cpp_sdk,
         ssh_exec: :future_additive
       }
     )
@@ -61,9 +61,9 @@ defmodule LlamaCppEx.Backend do
          endpoint_template: %{
            protocol: :openai_chat_completions,
            headers: boot_spec.headers,
-           provider_identity: :llama_cpp,
+           provider_identity: :llama_cpp_sdk,
            model_identity: boot_spec.model_identity,
-           source_runtime: :llama_cpp_ex,
+           source_runtime: :llama_cpp_sdk,
            capabilities: endpoint_capabilities(boot_spec),
            metadata: endpoint_metadata(boot_spec)
          },

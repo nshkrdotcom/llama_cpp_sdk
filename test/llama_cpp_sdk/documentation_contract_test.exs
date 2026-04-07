@@ -1,4 +1,4 @@
-defmodule LlamaCppEx.DocumentationContractTest do
+defmodule LlamaCppSdk.DocumentationContractTest do
   use ExUnit.Case, async: true
 
   test "hexdocs navigation includes every guide and examples readme" do

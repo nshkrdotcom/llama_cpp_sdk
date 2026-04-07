@@ -2,7 +2,7 @@
 
 ## Readiness Policy
 
-`llama_cpp_ex` owns readiness above the transport seam.
+`llama_cpp_sdk` owns readiness above the transport seam.
 
 The current readiness loop is intentionally simple and truthful:
 

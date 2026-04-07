@@ -1,7 +1,7 @@
-defmodule LlamaCppEx.Probes do
+defmodule LlamaCppSdk.Probes do
   @moduledoc false
 
-  alias LlamaCppEx.BootSpec
+  alias LlamaCppSdk.BootSpec
 
   @tcp_timeout_ms 200
   @http_timeout_ms 200

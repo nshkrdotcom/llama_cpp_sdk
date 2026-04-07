@@ -1,6 +1,6 @@
 Mix.Task.run("app.start")
 
-defmodule LlamaCppEx.Examples.Support do
+defmodule LlamaCppSdk.Examples.Support do
   @moduledoc false
 
   def new_fixture! do
@@ -9,7 +9,7 @@ defmodule LlamaCppEx.Examples.Support do
     state_dir =
       Path.join(
         System.tmp_dir!(),
-        "llama_cpp_ex_example_#{System.unique_integer([:positive, :monotonic])}"
+        "llama_cpp_sdk_example_#{System.unique_integer([:positive, :monotonic])}"
       )
 
     File.mkdir_p!(state_dir)
@@ -35,7 +35,7 @@ defmodule LlamaCppEx.Examples.Support do
   end
 end
 
-alias LlamaCppEx.Examples.Support
+alias LlamaCppSdk.Examples.Support
 alias SelfHostedInferenceCore.ConsumerManifest
 
 fixture = Support.new_fixture!()
@@ -54,7 +54,7 @@ consumer =
 
 try do
   {:ok, resolution} =
-    LlamaCppEx.resolve_endpoint(
+    LlamaCppSdk.resolve_endpoint(
       %{
         binary_path: fixture.python,
         launcher_args: [fixture.script],
@@ -64,8 +64,8 @@ try do
         port: fixture.port,
         api_key: "example-token",
         environment: %{
-          "LLAMA_CPP_EX_FAKE_MODE" => "ready",
-          "LLAMA_CPP_EX_FAKE_STATE_DIR" => fixture.state_dir
+          "LLAMA_CPP_SDK_FAKE_MODE" => "ready",
+          "LLAMA_CPP_SDK_FAKE_STATE_DIR" => fixture.state_dir
         }
       },
       consumer,
@@ -90,6 +90,6 @@ try do
 
   :ok = SelfHostedInferenceCore.stop_instance(resolution.instance.instance_id)
 after
-  _ = LlamaCppEx.unregister_backend()
+  _ = LlamaCppSdk.unregister_backend()
   Support.cleanup!(fixture)
 end

@@ -1,6 +1,6 @@
 # credo:disable-for-this-file Credo.Check.Warning.StructFieldAmount
 
-defmodule LlamaCppEx.BootSpec do
+defmodule LlamaCppSdk.BootSpec do
   @moduledoc """
   Canonical `llama-server` boot spec for the first `:spawned` backend release.
   """
@@ -221,7 +221,7 @@ defmodule LlamaCppEx.BootSpec do
       |> then(&:crypto.hash(:sha256, &1))
       |> Base.url_encode64(padding: false)
 
-    "llama_cpp:#{spec.model_identity}:#{digest}"
+    "llama_cpp_sdk:#{spec.model_identity}:#{digest}"
   end
 
   defp fetch(attrs, key, default) when is_map(attrs) do

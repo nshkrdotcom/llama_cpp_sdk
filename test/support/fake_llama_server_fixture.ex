@@ -1,4 +1,4 @@
-defmodule LlamaCppEx.TestSupport.FakeLlamaServerFixture do
+defmodule LlamaCppSdk.TestSupport.FakeLlamaServerFixture do
   @moduledoc false
 
   defstruct [:port, :state_dir, :model_path]
@@ -50,8 +50,8 @@ defmodule LlamaCppEx.TestSupport.FakeLlamaServerFixture do
       health_interval_ms: Map.get(overrides_map, :health_interval_ms, 50),
       execution_surface: [surface_kind: :local_subprocess],
       environment: %{
-        "LLAMA_CPP_EX_FAKE_MODE" => Map.get(overrides_map, :mode, "ready"),
-        "LLAMA_CPP_EX_FAKE_STATE_DIR" => fixture.state_dir
+        "LLAMA_CPP_SDK_FAKE_MODE" => Map.get(overrides_map, :mode, "ready"),
+        "LLAMA_CPP_SDK_FAKE_STATE_DIR" => fixture.state_dir
       },
       metadata: Map.get(overrides_map, :metadata, %{})
     }
@@ -78,7 +78,7 @@ defmodule LlamaCppEx.TestSupport.FakeLlamaServerFixture do
   defp unique_state_dir do
     Path.join(
       System.tmp_dir!(),
-      "llama_cpp_ex_fixture_#{System.unique_integer([:positive, :monotonic])}"
+      "llama_cpp_sdk_fixture_#{System.unique_integer([:positive, :monotonic])}"
     )
   end
 

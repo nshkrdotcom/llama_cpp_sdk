@@ -1,4 +1,4 @@
-defmodule LlamaCppEx.BackendIntegrationTest do
+defmodule LlamaCppSdk.BackendIntegrationTest do
   use ExUnit.Case, async: false
 
   @socket_capable? (case :gen_tcp.listen(0, [
@@ -29,7 +29,7 @@ defmodule LlamaCppEx.BackendIntegrationTest do
     LeaseRef
   }
 
-  alias LlamaCppEx.TestSupport.FakeLlamaServerFixture
+  alias LlamaCppSdk.TestSupport.FakeLlamaServerFixture
 
   setup do
     Application.ensure_all_started(:inets)
@@ -37,13 +37,13 @@ defmodule LlamaCppEx.BackendIntegrationTest do
     start_core_supervisor()
 
     _ = SelfHostedInferenceCore.stop_all_instances()
-    _ = LlamaCppEx.unregister_backend()
+    _ = LlamaCppSdk.unregister_backend()
 
-    :ok = LlamaCppEx.register_backend()
+    :ok = LlamaCppSdk.register_backend()
 
     on_exit(fn ->
       _ = SelfHostedInferenceCore.stop_all_instances()
-      _ = LlamaCppEx.unregister_backend()
+      _ = LlamaCppSdk.unregister_backend()
     end)
 
     :ok
@@ -67,7 +67,7 @@ defmodule LlamaCppEx.BackendIntegrationTest do
       )
 
     assert {:ok, resolution} =
-             LlamaCppEx.resolve_endpoint(
+             LlamaCppSdk.resolve_endpoint(
                attrs,
                req_llm_consumer(),
                owner_ref: "run-123",
@@ -75,9 +75,9 @@ defmodule LlamaCppEx.BackendIntegrationTest do
              )
 
     assert {:ok, %BackendManifest{} = manifest} =
-             SelfHostedInferenceCore.fetch_backend_manifest(:llama_cpp)
+             SelfHostedInferenceCore.fetch_backend_manifest(:llama_cpp_sdk)
 
-    assert manifest.backend == :llama_cpp
+    assert manifest.backend == :llama_cpp_sdk
     assert manifest.runtime_kind == :service
     assert manifest.startup_kind == :spawned
     assert manifest.management_modes == [:jido_managed]
@@ -88,9 +88,9 @@ defmodule LlamaCppEx.BackendIntegrationTest do
              management_mode: :jido_managed,
              target_class: :self_hosted_endpoint,
              protocol: :openai_chat_completions,
-             provider_identity: :llama_cpp,
+             provider_identity: :llama_cpp_sdk,
              model_identity: "fixture-qwen",
-             source_runtime: :llama_cpp_ex,
+             source_runtime: :llama_cpp_sdk,
              base_url: "http://127.0.0.1:" <> _rest
            } = resolution.endpoint
 
@@ -161,7 +161,7 @@ defmodule LlamaCppEx.BackendIntegrationTest do
     end)
 
     assert {:ok, resolution} =
-             LlamaCppEx.resolve_endpoint(
+             LlamaCppSdk.resolve_endpoint(
                FakeLlamaServerFixture.boot_attrs(fixture),
                req_llm_consumer(),
                owner_ref: "health-owner",
@@ -197,7 +197,7 @@ defmodule LlamaCppEx.BackendIntegrationTest do
       )
 
     assert {:error, {:llama_server_exit, %{status: :exit, code: 17}}} =
-             LlamaCppEx.ensure_instance(attrs, await_timeout_ms: 2_000)
+             LlamaCppSdk.ensure_instance(attrs, await_timeout_ms: 2_000)
   end
 
   @tag capture_log: true
@@ -216,7 +216,7 @@ defmodule LlamaCppEx.BackendIntegrationTest do
       )
 
     assert {:error, :readiness_timeout} =
-             LlamaCppEx.ensure_instance(attrs, await_timeout_ms: 2_000)
+             LlamaCppSdk.ensure_instance(attrs, await_timeout_ms: 2_000)
   end
 
   test "uses the backend stop strategy when the runtime is stopped" do
@@ -227,7 +227,7 @@ defmodule LlamaCppEx.BackendIntegrationTest do
     end)
 
     assert {:ok, resolution} =
-             LlamaCppEx.resolve_endpoint(
+             LlamaCppSdk.resolve_endpoint(
                FakeLlamaServerFixture.boot_attrs(fixture),
                req_llm_consumer(),
                owner_ref: "stop-owner",

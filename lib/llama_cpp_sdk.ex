@@ -1,4 +1,4 @@
-defmodule LlamaCppEx do
+defmodule LlamaCppSdk do
   @moduledoc """
   `llama.cpp` backend package for `self_hosted_inference_core`.
 
@@ -7,7 +7,7 @@ defmodule LlamaCppEx do
   descriptors through the self-hosted runtime kernel.
   """
 
-  alias LlamaCppEx.{Backend, BootSpec}
+  alias LlamaCppSdk.{Backend, BootSpec}
   alias SelfHostedInferenceCore.{BackendManifest, ConsumerManifest, InstanceSpec}
 
   @type metadata :: %{
@@ -21,14 +21,14 @@ defmodule LlamaCppEx do
 
   ## Examples
 
-      iex> LlamaCppEx.backend_id()
-      :llama_cpp
+      iex> LlamaCppSdk.backend_id()
+      :llama_cpp_sdk
 
   """
   @spec metadata() :: metadata()
   def metadata do
     %{
-      app: :llama_cpp_ex,
+      app: :llama_cpp_sdk,
       backend: backend_id(),
       version: version()
     }
@@ -37,15 +37,15 @@ defmodule LlamaCppEx do
   @doc """
   Returns the backend identifier published to `self_hosted_inference_core`.
   """
-  @spec backend_id() :: :llama_cpp
-  def backend_id, do: :llama_cpp
+  @spec backend_id() :: :llama_cpp_sdk
+  def backend_id, do: :llama_cpp_sdk
 
   @doc """
   Returns the current package version.
   """
   @spec version() :: String.t()
   def version do
-    case Application.spec(:llama_cpp_ex, :vsn) do
+    case Application.spec(:llama_cpp_sdk, :vsn) do
       nil -> "0.1.0"
       version -> to_string(version)
     end
@@ -74,7 +74,7 @@ defmodule LlamaCppEx do
   def manifest, do: Backend.manifest()
 
   @doc """
-  Normalizes a raw boot spec into `%LlamaCppEx.BootSpec{}`.
+  Normalizes a raw boot spec into `%LlamaCppSdk.BootSpec{}`.
   """
   @spec boot_spec(BootSpec.t() | keyword() | map()) :: {:ok, BootSpec.t()} | {:error, term()}
   def boot_spec(%BootSpec{} = spec), do: {:ok, spec}

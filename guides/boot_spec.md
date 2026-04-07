@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`LlamaCppEx.BootSpec` is the canonical launch contract for the backend.
+`LlamaCppSdk.BootSpec` is the canonical launch contract for the backend.
 Raw caller input is normalized once, and all later layers consume the typed
 spec instead of re-reading arbitrary option maps.
 

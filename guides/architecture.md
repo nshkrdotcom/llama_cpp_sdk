@@ -2,13 +2,13 @@
 
 ## Role In The Stack
 
-`llama_cpp_ex` is the provider-specific runtime kit for `llama.cpp` inside the
+`llama_cpp_sdk` is the provider-specific runtime kit for `llama.cpp` inside the
 self-hosted inference stack.
 
 ```text
 external_runtime_transport
   -> self_hosted_inference_core
-  -> llama_cpp_ex
+  -> llama_cpp_sdk
   -> req_llm consumers via published EndpointDescriptor values
 ```
 
@@ -43,7 +43,7 @@ The shared kernel remains above this package:
 - compatibility calculation
 - endpoint publication contracts
 
-### `llama_cpp_ex`
+### `llama_cpp_sdk`
 
 This package sits between the two:
 

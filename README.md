@@ -1,28 +1,28 @@
 <p align="center">
-  <img src="assets/llama_cpp_ex.svg" alt="llama_cpp_ex logo" width="200" height="200" />
+  <img src="assets/llama_cpp_sdk.svg" alt="llama_cpp_sdk logo" width="200" height="200" />
 </p>
 
 <p align="center">
-  <a href="https://hex.pm/packages/llama_cpp_ex">
-    <img src="https://img.shields.io/hexpm/v/llama_cpp_ex.svg" alt="Hex version" />
+  <a href="https://hex.pm/packages/llama_cpp_sdk">
+    <img src="https://img.shields.io/hexpm/v/llama_cpp_sdk.svg" alt="Hex version" />
   </a>
-  <a href="https://hexdocs.pm/llama_cpp_ex">
-    <img src="https://img.shields.io/badge/hexdocs-llama__cpp__ex-blue.svg" alt="HexDocs" />
+  <a href="https://hexdocs.pm/llama_cpp_sdk">
+    <img src="https://img.shields.io/badge/hexdocs-llama__cpp__sdk-blue.svg" alt="HexDocs" />
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License" />
   </a>
 </p>
 
-# LlamaCppEx
+# LlamaCppSdk
 
-`llama_cpp_ex` is the first concrete backend package for the self-hosted
+`llama_cpp_sdk` is the first concrete backend package for the self-hosted
 inference stack:
 
 ```text
 external_runtime_transport
   -> self_hosted_inference_core
-  -> llama_cpp_ex
+  -> llama_cpp_sdk
   -> req_llm through published EndpointDescriptor values
 ```
 
@@ -61,12 +61,12 @@ Add the package to your dependency list:
 ```elixir
 def deps do
   [
-    {:llama_cpp_ex, "~> 0.1.0"}
+    {:llama_cpp_sdk, "~> 0.1.0"}
   ]
 end
 ```
 
-`llama_cpp_ex` depends on `self_hosted_inference_core`, which in turn depends
+`llama_cpp_sdk` depends on `self_hosted_inference_core`, which in turn depends
 on `external_runtime_transport`.
 
 ## Quick Start
@@ -74,7 +74,7 @@ on `external_runtime_transport`.
 Resolve a spawned endpoint through the shared kernel:
 
 ```elixir
-alias LlamaCppEx
+alias LlamaCppSdk
 alias SelfHostedInferenceCore.ConsumerManifest
 
 consumer =
@@ -90,7 +90,7 @@ consumer =
   )
 
 {:ok, resolution} =
-  LlamaCppEx.resolve_endpoint(
+  LlamaCppSdk.resolve_endpoint(
     %{
       model: "/models/qwen3-14b-instruct.gguf",
       alias: "qwen3-14b-instruct",
@@ -149,7 +149,7 @@ The first release supports normalized fields for the installed
 - `extra_args`
 
 See [`guides/boot_spec.md`](guides/boot_spec.md) for the full contract.
-When `api_key_file` is provided, `llama_cpp_ex` reads it to derive the
+When `api_key_file` is provided, `llama_cpp_sdk` reads it to derive the
 published authorization header for northbound clients.
 
 ## Readiness And Health

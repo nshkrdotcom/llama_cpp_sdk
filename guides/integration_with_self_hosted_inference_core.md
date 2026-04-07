@@ -2,13 +2,13 @@
 
 ## Registration
 
-`llama_cpp_ex` registers its internal backend implementation with
+`llama_cpp_sdk` registers its internal backend implementation with
 `self_hosted_inference_core`.
 
 You can register explicitly:
 
 ```elixir
-:ok = LlamaCppEx.register_backend()
+:ok = LlamaCppSdk.register_backend()
 ```
 
 The application also registers the backend at startup when the package is used
@@ -20,7 +20,7 @@ The normal flow is:
 
 1. build or normalize a `BootSpec`
 2. build a `ConsumerManifest`
-3. call `LlamaCppEx.resolve_endpoint/3` or let
+3. call `LlamaCppSdk.resolve_endpoint/3` or let
    `SelfHostedInferenceCore.ensure_endpoint/4` derive the `InstanceSpec`
 4. pass the resulting `EndpointDescriptor` northbound to the control plane
 5. let `req_llm` execute requests against `endpoint.base_url` with the
@@ -42,7 +42,7 @@ consumer =
   )
 
 {:ok, resolution} =
-  LlamaCppEx.resolve_endpoint(
+  LlamaCppSdk.resolve_endpoint(
     %{
       model: "/models/qwen.gguf",
       alias: "qwen",
@@ -57,7 +57,7 @@ consumer =
 
 ## What Stays Out Of Scope
 
-`llama_cpp_ex` integrates with the kernel without re-owning:
+`llama_cpp_sdk` integrates with the kernel without re-owning:
 
 - transport internals
 - request execution

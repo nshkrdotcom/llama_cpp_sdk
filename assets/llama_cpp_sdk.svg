@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" role="img" aria-labelledby="title desc">
-  <title id="title">llama_cpp_ex logo</title>
+  <title id="title">llama_cpp_sdk logo</title>
   <desc id="desc">A symmetrical hexagonal emblem with layered technical detail.</desc>
   <defs>
     <linearGradient id="outerStroke" x1="24" y1="30" x2="176" y2="170" gradientUnits="userSpaceOnUse">

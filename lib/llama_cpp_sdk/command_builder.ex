@@ -1,10 +1,10 @@
-defmodule LlamaCppEx.CommandBuilder do
+defmodule LlamaCppSdk.CommandBuilder do
   @moduledoc """
-  Renders a normalized `%LlamaCppEx.BootSpec{}` into a transport command.
+  Renders a normalized `%LlamaCppSdk.BootSpec{}` into a transport command.
   """
 
   alias ExternalRuntimeTransport.Command
-  alias LlamaCppEx.BootSpec
+  alias LlamaCppSdk.BootSpec
 
   @spec command(BootSpec.t()) :: Command.t()
   def command(%BootSpec{} = boot_spec) do
