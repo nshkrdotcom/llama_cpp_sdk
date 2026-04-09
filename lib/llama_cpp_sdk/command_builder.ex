@@ -3,7 +3,7 @@ defmodule LlamaCppSdk.CommandBuilder do
   Renders a normalized `%LlamaCppSdk.BootSpec{}` into a transport command.
   """
 
-  alias ExternalRuntimeTransport.Command
+  alias ExecutionPlane.Command
   alias LlamaCppSdk.BootSpec
 
   @spec command(BootSpec.t()) :: Command.t()

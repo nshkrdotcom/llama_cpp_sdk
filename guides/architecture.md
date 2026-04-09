@@ -6,7 +6,7 @@
 self-hosted inference stack.
 
 ```text
-external_runtime_transport
+execution_plane
   -> self_hosted_inference_core
   -> llama_cpp_sdk
   -> req_llm consumers via published EndpointDescriptor values
@@ -24,7 +24,7 @@ must not guess:
 
 ## Boundary Rules
 
-### `external_runtime_transport`
+### `execution_plane`
 
 Transport remains below this package:
 
@@ -39,6 +39,7 @@ The shared kernel remains above this package:
 
 - backend registry
 - runtime instance reuse
+- attachability and lease reuse semantics
 - lease semantics
 - compatibility calculation
 - endpoint publication contracts

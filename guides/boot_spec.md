@@ -39,8 +39,9 @@ The first release normalizes these fields:
 - `extra_args`
 - `metadata`
 
-`execution_surface` is intentionally narrow in the first release:
-only `:local_subprocess` is accepted.
+`execution_surface` is intentionally narrow in the first release: only
+`:local_subprocess` is accepted, even though the lower substrate now has SSH
+and guest placement breadth elsewhere in the stack.
 
 ## Derived Fields
 

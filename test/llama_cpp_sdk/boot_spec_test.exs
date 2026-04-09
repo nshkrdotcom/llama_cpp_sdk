@@ -1,7 +1,7 @@
 defmodule LlamaCppSdk.BootSpecTest do
   use ExUnit.Case, async: true
 
-  alias ExternalRuntimeTransport.Command
+  alias ExecutionPlane.Command
   alias LlamaCppSdk.{BootSpec, CommandBuilder}
 
   test "normalizes a boot spec into endpoint-ready defaults" do

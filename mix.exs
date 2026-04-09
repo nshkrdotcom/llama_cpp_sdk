@@ -35,11 +35,32 @@ defmodule LlamaCppSdk.MixProject do
 
   defp deps do
     [
-      {:self_hosted_inference_core, "~> 0.1.0"},
+      self_hosted_inference_core_dep(),
+      execution_plane_dep(),
       {:ex_doc, "~> 0.40", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: :dev, runtime: false}
     ]
+  end
+
+  defp self_hosted_inference_core_dep do
+    path = Path.expand("../self_hosted_inference_core", __DIR__)
+
+    if File.dir?(path) do
+      {:self_hosted_inference_core, path: path, override: true}
+    else
+      {:self_hosted_inference_core, "~> 0.1.0"}
+    end
+  end
+
+  defp execution_plane_dep do
+    path = Path.expand("../execution_plane", __DIR__)
+
+    if File.dir?(path) do
+      {:execution_plane, path: path, override: true}
+    else
+      {:execution_plane, "~> 0.1.0"}
+    end
   end
 
   defp description do

@@ -20,7 +20,7 @@
 inference stack:
 
 ```text
-external_runtime_transport
+execution_plane
   -> self_hosted_inference_core
   -> llama_cpp_sdk
   -> req_llm through published EndpointDescriptor values
@@ -66,8 +66,8 @@ def deps do
 end
 ```
 
-`llama_cpp_sdk` depends on `self_hosted_inference_core`, which in turn depends
-on `external_runtime_transport`.
+`llama_cpp_sdk` depends on `self_hosted_inference_core` and the shared
+`execution_plane` substrate beneath it.
 
 ## Quick Start
 
@@ -156,13 +156,18 @@ published authorization header for northbound clients.
 
 Readiness is owned here, above the transport seam:
 
-1. launch the spawned process via `external_runtime_transport`
+1. launch the spawned process via `execution_plane`
 2. probe TCP reachability on the requested host and port
 3. probe HTTP availability on `/health` or `/v1/models`
 4. publish the endpoint only after readiness succeeds
 
 Health continues to poll after publication so the shared kernel can expose
 `healthy`, `degraded`, or `unavailable` runtime truth.
+
+This package stays a backend layer above the family kit. It does not turn
+Execution Plane details into its public API and it does not absorb
+service-runtime lease or attachability semantics that belong in
+`self_hosted_inference_core`.
 
 ## Examples And Guides
 

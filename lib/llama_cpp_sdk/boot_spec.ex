@@ -68,7 +68,7 @@ defmodule LlamaCppSdk.BootSpec do
           readiness_interval_ms: pos_integer(),
           health_interval_ms: pos_integer(),
           stop_timeout_ms: pos_integer(),
-          execution_surface: keyword() | ExternalRuntimeTransport.ExecutionSurface.t(),
+          execution_surface: keyword() | map() | ExecutionPlane.Placements.Surface.t(),
           environment: %{optional(String.t()) => String.t()},
           extra_args: [String.t()],
           metadata: map(),
@@ -319,26 +319,48 @@ defmodule LlamaCppSdk.BootSpec do
 
   defp normalize_execution_surface(nil), do: {:ok, [surface_kind: :local_subprocess]}
 
-  defp normalize_execution_surface(
-         %ExternalRuntimeTransport.ExecutionSurface{
-           surface_kind: :local_subprocess
-         } = surface
-       ),
-       do: {:ok, surface}
-
-  defp normalize_execution_surface(%ExternalRuntimeTransport.ExecutionSurface{
-         surface_kind: surface_kind
-       }),
-       do: {:error, {:unsupported_execution_surface, surface_kind}}
+  defp normalize_execution_surface(%ExecutionPlane.Placements.Surface{} = surface) do
+    normalize_execution_surface(%{
+      surface_kind: normalize_surface_kind(surface.surface_kind),
+      transport_options: surface.transport_options,
+      target_id: surface.target_id,
+      lease_ref: surface.lease_ref,
+      surface_ref: surface.surface_ref,
+      boundary_class: surface.boundary_class,
+      observability: surface.observability
+    })
+  end
 
   defp normalize_execution_surface(surface) when is_list(surface) do
     if Keyword.keyword?(surface) do
-      case Keyword.get(surface, :surface_kind, :local_subprocess) do
+      case normalize_surface_kind(Keyword.get(surface, :surface_kind, :local_subprocess)) do
         :local_subprocess -> {:ok, surface}
         surface_kind -> {:error, {:unsupported_execution_surface, surface_kind}}
       end
     else
       {:error, {:execution_surface, surface}}
+    end
+  end
+
+  defp normalize_execution_surface(surface) when is_map(surface) do
+    case normalize_surface_kind(Map.get(surface, :surface_kind, Map.get(surface, "surface_kind"))) do
+      :local_subprocess ->
+        {:ok,
+         surface
+         |> Enum.flat_map(fn
+           {:__struct__, _value} -> []
+           {"surface_kind", value} -> [surface_kind: normalize_surface_kind(value)]
+           {:surface_kind, value} -> [surface_kind: normalize_surface_kind(value)]
+           {key, value} when is_binary(key) -> [{String.to_existing_atom(key), value}]
+           pair -> [pair]
+         end)
+         |> Keyword.new()}
+
+      nil ->
+        {:error, {:execution_surface, surface}}
+
+      surface_kind ->
+        {:error, {:unsupported_execution_surface, surface_kind}}
     end
   end
 
@@ -395,14 +417,37 @@ defmodule LlamaCppSdk.BootSpec do
     "http://#{formatted_host}:#{port}"
   end
 
-  defp execution_surface_identity(%ExternalRuntimeTransport.ExecutionSurface{} = surface) do
+  defp execution_surface_identity(surface) when is_list(surface), do: Enum.sort(surface)
+
+  defp execution_surface_identity(%ExecutionPlane.Placements.Surface{} = surface) do
     surface
     |> Map.from_struct()
+    |> Map.delete(:__struct__)
+    |> Map.update!(:surface_kind, &normalize_surface_kind/1)
     |> Enum.sort()
   end
 
-  defp execution_surface_identity(surface) when is_list(surface), do: Enum.sort(surface)
+  defp execution_surface_identity(surface) when is_map(surface) do
+    surface
+    |> Map.new(fn
+      {:__struct__, _value} -> nil
+      {"surface_kind", value} -> {:surface_kind, normalize_surface_kind(value)}
+      {:surface_kind, value} -> {:surface_kind, normalize_surface_kind(value)}
+      {key, value} when is_binary(key) -> {String.to_existing_atom(key), value}
+      pair -> pair
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.sort()
+  end
+
   defp execution_surface_identity(surface), do: surface
+
+  defp normalize_surface_kind(nil), do: nil
+  defp normalize_surface_kind("local_subprocess"), do: :local_subprocess
+  defp normalize_surface_kind("ssh_exec"), do: :ssh_exec
+  defp normalize_surface_kind("guest_bridge"), do: :guest_bridge
+  defp normalize_surface_kind(surface_kind) when is_atom(surface_kind), do: surface_kind
+  defp normalize_surface_kind(_surface_kind), do: nil
 
   defp derive_model_identity(model) do
     model

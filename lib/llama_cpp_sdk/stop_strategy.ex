@@ -1,7 +1,7 @@
 defmodule LlamaCppSdk.StopStrategy do
   @moduledoc false
 
-  alias ExternalRuntimeTransport.Transport
+  alias ExecutionPlane.Process.Transport
 
   @poll_interval_ms 25
 

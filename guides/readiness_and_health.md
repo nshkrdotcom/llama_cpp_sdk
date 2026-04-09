@@ -6,7 +6,7 @@
 
 The current readiness loop is intentionally simple and truthful:
 
-1. launch the subprocess through `external_runtime_transport`
+1. launch the subprocess through `execution_plane`
 2. observe stdout and stderr for operator-useful signals
 3. confirm TCP reachability on the configured host and port
 4. confirm HTTP readiness on `/health` or `/v1/models`
@@ -46,3 +46,6 @@ exist today:
 
 The package does not pretend it has a stronger stop contract than the shared
 transport can actually enforce.
+
+Lease reuse, attachability, and endpoint publication remain above this package
+in `self_hosted_inference_core`.
