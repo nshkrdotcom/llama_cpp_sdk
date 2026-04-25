@@ -4,7 +4,7 @@ defmodule LlamaCppSdk.MixProject do
   @version "0.1.0"
   @source_url "https://github.com/nshkrdotcom/llama_cpp_sdk"
   @homepage_url "https://hex.pm/packages/llama_cpp_sdk"
-  @execution_plane_local_version "~> 0.1.0"
+  @execution_plane_version "~> 0.1.0"
   @execution_plane_process_version "~> 0.1.0"
   @self_hosted_inference_core_version "~> 0.1.0"
 
@@ -39,7 +39,7 @@ defmodule LlamaCppSdk.MixProject do
   defp deps do
     [
       self_hosted_inference_core_dep(),
-      execution_plane_local_dep(),
+      execution_plane_dep(),
       execution_plane_process_dep(),
       {:ex_doc, "~> 0.40", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
@@ -54,10 +54,10 @@ defmodule LlamaCppSdk.MixProject do
     end
   end
 
-  defp execution_plane_local_dep do
-    case execution_plane_workspace_dep_path("placements/execution_plane_local") do
-      nil -> {:execution_plane_local, @execution_plane_local_version}
-      path -> {:execution_plane_local, path: path}
+  defp execution_plane_dep do
+    case local_dep_path("../execution_plane") do
+      nil -> {:execution_plane, @execution_plane_version}
+      path -> {:execution_plane, path: path}
     end
   end
 
