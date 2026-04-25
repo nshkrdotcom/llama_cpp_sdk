@@ -8,7 +8,13 @@
 
 ## Execution Plane Stack
 - `llama_cpp_sdk` consumes `self_hosted_inference_core` for service-runtime semantics and should not expose lower process mechanics directly.
-- Keep `self_hosted_inference_core` and `execution_plane` dependency resolution publish-aware: local path deps for sibling development, Hex constraints for release builds.
+- Keep `self_hosted_inference_core` and `execution_plane` dependency
+  resolution publish-aware: local path deps for sibling development, Hex
+  constraints for release builds.
+- Local sibling development uses `../execution_plane/core/execution_plane` for
+  `:execution_plane` and `../execution_plane/runtimes/execution_plane_process`
+  for the process lane. Do not point `:execution_plane` at the sibling repo
+  root; that root is the non-published Blitz workspace project.
 
 ## Gates
 - Run `mix format`.
