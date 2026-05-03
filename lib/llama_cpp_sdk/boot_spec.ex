@@ -42,6 +42,22 @@ defmodule LlamaCppSdk.BootSpec do
   @type flash_attn :: :on | :off | :auto
   @type gpu_layers :: non_neg_integer() | :auto | :all
   @type pooling :: :none | :mean | :cls | :last | :rank | nil
+  @pooling_by_name %{
+    "none" => :none,
+    "mean" => :mean,
+    "cls" => :cls,
+    "last" => :last,
+    "rank" => :rank
+  }
+  @surface_key_by_name %{
+    "surface_kind" => :surface_kind,
+    "transport_options" => :transport_options,
+    "target_id" => :target_id,
+    "lease_ref" => :lease_ref,
+    "surface_ref" => :surface_ref,
+    "boundary_class" => :boundary_class,
+    "observability" => :observability
+  }
 
   @type t :: %__MODULE__{
           binary_path: String.t(),
@@ -297,8 +313,12 @@ defmodule LlamaCppSdk.BootSpec do
   defp normalize_pooling(nil), do: {:ok, nil}
   defp normalize_pooling(value) when value in [:none, :mean, :cls, :last, :rank], do: {:ok, value}
 
-  defp normalize_pooling(value) when value in ["none", "mean", "cls", "last", "rank"],
-    do: {:ok, String.to_existing_atom(value)}
+  defp normalize_pooling(value) when is_binary(value) do
+    case Map.fetch(@pooling_by_name, value) do
+      {:ok, pooling} -> {:ok, pooling}
+      :error -> {:error, {:pooling, value}}
+    end
+  end
 
   defp normalize_pooling(value), do: {:error, {:pooling, value}}
 
@@ -345,16 +365,9 @@ defmodule LlamaCppSdk.BootSpec do
   defp normalize_execution_surface(surface) when is_map(surface) do
     case normalize_surface_kind(Map.get(surface, :surface_kind, Map.get(surface, "surface_kind"))) do
       :local_subprocess ->
-        {:ok,
-         surface
-         |> Enum.flat_map(fn
-           {:__struct__, _value} -> []
-           {"surface_kind", value} -> [surface_kind: normalize_surface_kind(value)]
-           {:surface_kind, value} -> [surface_kind: normalize_surface_kind(value)]
-           {key, value} when is_binary(key) -> [{String.to_existing_atom(key), value}]
-           pair -> [pair]
-         end)
-         |> Keyword.new()}
+        with {:ok, surface_keywords} <- normalize_execution_surface_map(surface) do
+          {:ok, Keyword.new(surface_keywords)}
+        end
 
       nil ->
         {:error, {:execution_surface, surface}}
@@ -433,7 +446,7 @@ defmodule LlamaCppSdk.BootSpec do
       {:__struct__, _value} -> nil
       {"surface_kind", value} -> {:surface_kind, normalize_surface_kind(value)}
       {:surface_kind, value} -> {:surface_kind, normalize_surface_kind(value)}
-      {key, value} when is_binary(key) -> {String.to_existing_atom(key), value}
+      {key, value} when is_binary(key) -> {surface_key_from_name(key) || key, value}
       pair -> pair
     end)
     |> Enum.reject(&is_nil/1)
@@ -452,7 +465,50 @@ defmodule LlamaCppSdk.BootSpec do
   defp derive_model_identity(model) do
     model
     |> Path.basename()
-    |> String.replace(~r/\.[^.]+$/, "")
+    |> strip_last_extension()
+  end
+
+  defp normalize_execution_surface_map(surface) do
+    Enum.reduce_while(surface, {:ok, []}, fn pair, {:ok, acc} ->
+      case normalize_execution_surface_pair(pair) do
+        {:ok, nil} -> {:cont, {:ok, acc}}
+        {:ok, normalized_pair} -> {:cont, {:ok, [normalized_pair | acc]}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:ok, pairs} -> {:ok, Enum.reverse(pairs)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp normalize_execution_surface_pair({:__struct__, _value}), do: {:ok, nil}
+
+  defp normalize_execution_surface_pair({"surface_kind", value}),
+    do: {:ok, {:surface_kind, normalize_surface_kind(value)}}
+
+  defp normalize_execution_surface_pair({:surface_kind, value}),
+    do: {:ok, {:surface_kind, normalize_surface_kind(value)}}
+
+  defp normalize_execution_surface_pair({key, value}) when is_binary(key) do
+    case surface_key_from_name(key) do
+      nil -> {:error, {:unsupported_execution_surface_key, key}}
+      surface_key -> {:ok, {surface_key, value}}
+    end
+  end
+
+  defp normalize_execution_surface_pair(pair) when is_tuple(pair), do: {:ok, pair}
+
+  defp surface_key_from_name(key), do: Map.get(@surface_key_by_name, key)
+
+  defp strip_last_extension(basename) do
+    case basename |> :binary.matches(".") |> List.last() do
+      {index, 1} when index > 0 ->
+        binary_part(basename, 0, index)
+
+      _other ->
+        basename
+    end
   end
 
   defp ensure_prefix_slash(value) do

@@ -158,4 +158,44 @@ defmodule LlamaCppSdk.BootSpecTest do
                execution_surface: [surface_kind: :ssh_exec]
              )
   end
+
+  test "normalizes bounded string execution surface keys" do
+    assert {:ok, spec} =
+             BootSpec.new(
+               model: "/models/demo.gguf",
+               execution_surface: %{
+                 "surface_kind" => "local_subprocess",
+                 "target_id" => "target-1",
+                 "lease_ref" => "lease-1"
+               }
+             )
+
+    assert spec.execution_surface[:surface_kind] == :local_subprocess
+    assert spec.execution_surface[:target_id] == "target-1"
+    assert spec.execution_surface[:lease_ref] == "lease-1"
+  end
+
+  test "rejects unknown execution surface keys" do
+    assert {:error, {:unsupported_execution_surface_key, "unexpected"}} =
+             BootSpec.new(
+               model: "/models/demo.gguf",
+               execution_surface: %{
+                 "surface_kind" => "local_subprocess",
+                 "unexpected" => "value"
+               }
+             )
+  end
+
+  test "normalizes pooling strings through bounded values" do
+    assert {:ok, spec} =
+             BootSpec.new(
+               model: "/models/demo.gguf",
+               pooling: "mean"
+             )
+
+    assert spec.pooling == :mean
+
+    assert {:error, {:pooling, "nearest"}} =
+             BootSpec.new(model: "/models/demo.gguf", pooling: "nearest")
+  end
 end
