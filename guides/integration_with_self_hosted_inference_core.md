@@ -67,3 +67,11 @@ consumer =
 The published endpoint descriptor carries authorization headers derived from
 `api_key` or `api_key_file`, but request execution still stays northbound in
 `req_llm`.
+
+For governed local service runs, callers pass `governed_authority` instead of
+direct endpoint auth, model config, process env, or attach metadata fields.
+The authority packet materializes the service refs and values that this backend
+needs to launch or publish the endpoint. Direct authority-bearing boot fields
+are rejected in that mode, and backend runtime logs redact the materialized
+token and process env values before they become recent-event or stderr
+evidence.

@@ -38,6 +38,7 @@ The first release normalizes these fields:
 - `environment`
 - `extra_args`
 - `metadata`
+- `governed_authority`
 
 `execution_surface` is intentionally narrow in the first release: only
 `:local_subprocess` is accepted, even though the lower substrate now has SSH
@@ -56,6 +57,28 @@ That keeps endpoint publication deterministic and avoids re-deriving URLs in
 multiple modules.
 `headers` are derived from either `api_key` or the contents of `api_key_file`
 so the published endpoint remains directly usable by northbound clients.
+
+## Governed Authority
+
+`governed_authority` selects governed local service materialization. It is a
+standalone field because governed mode must not infer endpoint auth, model
+config, attach refs, or process env from normal caller options or ambient
+machine state.
+
+The authority packet supplies:
+
+- endpoint, service identity, model config, target, attach grant, operation
+  policy, and redaction refs
+- optional credential and credential lease refs
+- materialized model path, alias, model identity, host, port, API prefix, and
+  service auth
+- materialized subprocess environment and backend command fields
+
+When it is present, direct boot-spec fields that can carry endpoint auth, model
+configuration, process env, subprocess command material, attach metadata, or
+arbitrary metadata are rejected with
+`{:unmanaged_governed_boot_field, field}`. Standalone callers keep the existing
+direct-field behavior by omitting `governed_authority`.
 
 ## Instance Identity
 

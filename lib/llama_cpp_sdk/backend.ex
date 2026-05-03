@@ -82,16 +82,21 @@ defmodule LlamaCppSdk.Backend do
 
   @impl BackendBehaviour
   def handle_transport_event({:message, line}, state) when is_binary(line) do
+    redacted_line = redact_text(line, state)
+
     state =
       state
-      |> put_recent_event({:stdout, line})
+      |> put_recent_event({:stdout, redacted_line})
       |> maybe_mark_ready_hint(line)
 
     {:pending, state}
   end
 
   def handle_transport_event({:stderr, chunk}, state) do
-    chunk = IO.iodata_to_binary(chunk)
+    chunk =
+      chunk
+      |> IO.iodata_to_binary()
+      |> redact_text(state)
 
     {:pending,
      state
@@ -100,7 +105,12 @@ defmodule LlamaCppSdk.Backend do
   end
 
   def handle_transport_event({:data, chunk}, state) do
-    {:pending, put_recent_event(state, {:data, IO.iodata_to_binary(chunk)})}
+    chunk =
+      chunk
+      |> IO.iodata_to_binary()
+      |> redact_text(state)
+
+    {:pending, put_recent_event(state, {:data, chunk})}
   end
 
   def handle_transport_event({:error, reason}, state) do
@@ -108,6 +118,9 @@ defmodule LlamaCppSdk.Backend do
   end
 
   def handle_transport_event({:exit, %ProcessExit{} = exit}, state) do
+    exit = redact_exit(exit, state)
+    stderr = if(exit.stderr in [nil, ""], do: state.stderr, else: exit.stderr)
+
     {:stop,
      {:llama_server_exit,
       %{
@@ -115,7 +128,7 @@ defmodule LlamaCppSdk.Backend do
         code: exit.code,
         signal: exit.signal,
         reason: exit.reason,
-        stderr: if(exit.stderr in [nil, ""], do: state.stderr, else: exit.stderr)
+        stderr: stderr
       }}, put_recent_event(state, {:exit, exit})}
   end
 
@@ -253,6 +266,28 @@ defmodule LlamaCppSdk.Backend do
       |> Enum.take(10)
     end)
   end
+
+  defp redact_exit(%ProcessExit{} = exit, state) do
+    %{exit | stderr: redact_text(exit.stderr, state)}
+  end
+
+  defp redact_text(nil, _state), do: nil
+
+  defp redact_text(text, state) when is_binary(text) do
+    state
+    |> redaction_values()
+    |> Enum.reduce(text, fn value, acc ->
+      String.replace(acc, value, "[REDACTED]")
+    end)
+  end
+
+  defp redact_text(text, _state), do: text
+
+  defp redaction_values(%{boot_spec: %BootSpec{} = boot_spec}) do
+    BootSpec.redaction_values(boot_spec)
+  end
+
+  defp redaction_values(_state), do: []
 
   defp truncate_tail(text) do
     if byte_size(text) > 4_096 do

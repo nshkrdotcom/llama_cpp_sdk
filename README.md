@@ -147,10 +147,33 @@ The first release supports normalized fields for the installed
 - `pooling`
 - `environment`
 - `extra_args`
+- `governed_authority`
 
 See [`guides/boot_spec.md`](guides/boot_spec.md) for the full contract.
 When `api_key_file` is provided, `llama_cpp_sdk` reads it to derive the
 published authorization header for northbound clients.
+
+## Governed Mode
+
+Standalone boot specs still accept direct local endpoint config, endpoint auth,
+and process env. Governed runs are selected by passing
+`governed_authority: %LlamaCppSdk.GovernedAuthority{}` or equivalent attrs.
+
+In governed mode, these authority-bearing values are materialized only from the
+authority packet:
+
+- local service endpoint identity
+- model path, alias, and model identity
+- endpoint bearer token or materialized token file
+- subprocess environment
+- target, surface, and attach refs
+- redaction and operation policy refs
+
+Direct `api_key`, `api_key_file`, `model`, `environment`,
+`execution_surface`, endpoint, model-config, process-argument, or metadata
+fields are rejected when `governed_authority` is present. Backend stdout,
+stderr, data, and exit logs redact the materialized endpoint token and process
+env values before storing recent events or error stderr.
 
 ## Readiness And Health
 

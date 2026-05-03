@@ -5,6 +5,8 @@ defmodule LlamaCppSdk.BootSpec do
   Canonical `llama-server` boot spec for the first `:spawned` backend release.
   """
 
+  alias LlamaCppSdk.GovernedAuthority
+
   @enforce_keys [:model]
   defstruct binary_path: "llama-server",
             launcher_args: [],
@@ -98,7 +100,8 @@ defmodule LlamaCppSdk.BootSpec do
   def new(attrs) when is_list(attrs), do: new(Map.new(attrs))
 
   def new(attrs) when is_map(attrs) do
-    with {:ok, binary_path} <-
+    with {:ok, attrs} <- maybe_materialize_governed_authority(attrs),
+         {:ok, binary_path} <-
            normalize_nonempty_binary(fetch(attrs, :binary_path, "llama-server"), :binary_path),
          {:ok, launcher_args} <-
            normalize_string_list(fetch(attrs, :launcher_args, []), :launcher_args),
@@ -239,6 +242,38 @@ defmodule LlamaCppSdk.BootSpec do
 
     "llama_cpp_sdk:#{spec.model_identity}:#{digest}"
   end
+
+  @spec redaction_values(t()) :: [String.t()]
+  def redaction_values(%__MODULE__{} = spec) do
+    [
+      spec.api_key,
+      bearer_token(Map.get(spec.headers, "authorization"))
+      | Map.values(spec.headers) ++ Map.values(spec.environment)
+    ]
+    |> Enum.filter(&redaction_value?/1)
+    |> Enum.uniq()
+  end
+
+  defp maybe_materialize_governed_authority(attrs) do
+    case GovernedAuthority.fetch(attrs) do
+      :error ->
+        {:ok, attrs}
+
+      {:ok, authority} ->
+        with :ok <- GovernedAuthority.reject_unmanaged_attrs(attrs) do
+          {:ok, GovernedAuthority.materialize_attrs(authority, attrs)}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp redaction_value?(value) when is_binary(value), do: String.trim(value) != ""
+  defp redaction_value?(_value), do: false
+
+  defp bearer_token("Bearer " <> token), do: token
+  defp bearer_token(_header), do: nil
 
   defp fetch(attrs, key, default) when is_map(attrs) do
     Map.get(attrs, key, Map.get(attrs, Atom.to_string(key), default))
