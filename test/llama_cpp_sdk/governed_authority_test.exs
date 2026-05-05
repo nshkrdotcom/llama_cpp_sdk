@@ -47,14 +47,34 @@ defmodule LlamaCppSdk.GovernedAuthorityTest do
              credential_lease_ref: "credential-lease://local/llama",
              credential_ref: "credential://local/llama",
              endpoint_ref: "endpoint://local/llama",
+             model_account_ref: "model-account://local/llama/governed",
              model_config_ref: "model-config://llama/governed",
              operation_policy_ref: "operation-policy://local/llama/read",
+             provider_account_ref: "provider-account://tenant/local-llama",
              redaction_ref: "redaction://local/llama",
              service_identity_ref: "service-identity://llama-server/local",
+             target_posture_ref: "target-posture://local/llama/no-egress",
              target_ref: "target://local/llama"
            }
 
     refute inspect(spec.metadata) =~ "governed-token"
+  end
+
+  test "governed authority distinguishes local endpoint service from provider account" do
+    authority = authority()
+    refs = GovernedAuthority.refs(authority)
+
+    assert refs.endpoint_ref == "endpoint://local/llama"
+    assert refs.service_identity_ref == "service-identity://llama-server/local"
+    assert refs.provider_account_ref == "provider-account://tenant/local-llama"
+    assert refs.model_account_ref == "model-account://local/llama/governed"
+    assert refs.target_posture_ref == "target-posture://local/llama/no-egress"
+    refute refs.endpoint_ref == refs.provider_account_ref
+    refute refs.service_identity_ref == refs.provider_account_ref
+
+    assert {:error, {:identity_ref_collision, :service_identity_ref, :provider_account_ref}} =
+             authority_attrs(service_identity_ref: "provider-account://tenant/local-llama")
+             |> GovernedAuthority.new()
   end
 
   test "governed boot spec rejects unmanaged auth model attach and process env fields" do
@@ -117,11 +137,20 @@ defmodule LlamaCppSdk.GovernedAuthorityTest do
   end
 
   defp authority(overrides \\ []) do
-    defaults = [
+    overrides
+    |> authority_attrs()
+    |> GovernedAuthority.new!()
+  end
+
+  defp authority_attrs(overrides) do
+    [
       endpoint_ref: "endpoint://local/llama",
       service_identity_ref: "service-identity://llama-server/local",
       model_config_ref: "model-config://llama/governed",
+      provider_account_ref: "provider-account://tenant/local-llama",
+      model_account_ref: "model-account://local/llama/governed",
       target_ref: "target://local/llama",
+      target_posture_ref: "target-posture://local/llama/no-egress",
       attach_grant_ref: "attach-grant://local/llama",
       credential_ref: "credential://local/llama",
       credential_lease_ref: "credential-lease://local/llama",
@@ -136,10 +165,7 @@ defmodule LlamaCppSdk.GovernedAuthorityTest do
       api_prefix: "",
       environment: %{"LLAMA_CACHE" => "/governed/cache"}
     ]
-
-    defaults
     |> Keyword.merge(overrides)
-    |> GovernedAuthority.new!()
   end
 
   defp restore_env(key, nil), do: System.delete_env(key)

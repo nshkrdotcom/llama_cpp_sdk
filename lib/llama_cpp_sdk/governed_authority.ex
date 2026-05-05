@@ -9,7 +9,10 @@ defmodule LlamaCppSdk.GovernedAuthority do
     :endpoint_ref,
     :service_identity_ref,
     :model_config_ref,
+    :model_account_ref,
+    :provider_account_ref,
     :target_ref,
+    :target_posture_ref,
     :attach_grant_ref,
     :operation_policy_ref,
     :redaction_ref
@@ -62,7 +65,10 @@ defmodule LlamaCppSdk.GovernedAuthority do
   defstruct endpoint_ref: nil,
             service_identity_ref: nil,
             model_config_ref: nil,
+            model_account_ref: nil,
+            provider_account_ref: nil,
             target_ref: nil,
+            target_posture_ref: nil,
             attach_grant_ref: nil,
             operation_policy_ref: nil,
             redaction_ref: nil,
@@ -97,7 +103,10 @@ defmodule LlamaCppSdk.GovernedAuthority do
           endpoint_ref: String.t(),
           service_identity_ref: String.t(),
           model_config_ref: String.t(),
+          model_account_ref: String.t(),
+          provider_account_ref: String.t(),
           target_ref: String.t(),
+          target_posture_ref: String.t(),
           attach_grant_ref: String.t(),
           operation_policy_ref: String.t(),
           redaction_ref: String.t(),
@@ -143,7 +152,10 @@ defmodule LlamaCppSdk.GovernedAuthority do
       endpoint_ref: fetch(attrs, :endpoint_ref, nil),
       service_identity_ref: fetch(attrs, :service_identity_ref, nil),
       model_config_ref: fetch(attrs, :model_config_ref, nil),
+      model_account_ref: fetch(attrs, :model_account_ref, nil),
+      provider_account_ref: fetch(attrs, :provider_account_ref, nil),
       target_ref: fetch(attrs, :target_ref, nil),
+      target_posture_ref: fetch(attrs, :target_posture_ref, nil),
       attach_grant_ref: fetch(attrs, :attach_grant_ref, nil),
       operation_policy_ref: fetch(attrs, :operation_policy_ref, nil),
       redaction_ref: fetch(attrs, :redaction_ref, nil),
@@ -255,7 +267,10 @@ defmodule LlamaCppSdk.GovernedAuthority do
       endpoint_ref: authority.endpoint_ref,
       service_identity_ref: authority.service_identity_ref,
       model_config_ref: authority.model_config_ref,
+      model_account_ref: authority.model_account_ref,
+      provider_account_ref: authority.provider_account_ref,
       target_ref: authority.target_ref,
+      target_posture_ref: authority.target_posture_ref,
       attach_grant_ref: authority.attach_grant_ref,
       credential_ref: authority.credential_ref,
       credential_lease_ref: authority.credential_lease_ref,
@@ -287,6 +302,7 @@ defmodule LlamaCppSdk.GovernedAuthority do
          :ok <- validate_string_list(:extra_args, authority.extra_args),
          :ok <- validate_environment(authority.environment),
          :ok <- validate_metadata(authority.metadata),
+         :ok <- validate_distinct_identity_refs(authority),
          :ok <- validate_execution_surface(authority.execution_surface) do
       {:ok, authority}
     end
@@ -333,6 +349,22 @@ defmodule LlamaCppSdk.GovernedAuthority do
 
   defp validate_metadata(metadata) when is_map(metadata), do: :ok
   defp validate_metadata(metadata), do: {:error, {:metadata, metadata}}
+
+  defp validate_distinct_identity_refs(%__MODULE__{} = authority) do
+    cond do
+      authority.service_identity_ref == authority.provider_account_ref ->
+        {:error, {:identity_ref_collision, :service_identity_ref, :provider_account_ref}}
+
+      authority.endpoint_ref == authority.provider_account_ref ->
+        {:error, {:identity_ref_collision, :endpoint_ref, :provider_account_ref}}
+
+      authority.model_account_ref == authority.provider_account_ref ->
+        {:error, {:identity_ref_collision, :model_account_ref, :provider_account_ref}}
+
+      true ->
+        :ok
+    end
+  end
 
   defp validate_execution_surface(nil), do: :ok
 
