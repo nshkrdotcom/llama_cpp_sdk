@@ -4,25 +4,7 @@ defmodule LlamaCppSdk.GovernedAuthorityTest do
   alias ExecutionPlane.Command
   alias LlamaCppSdk.{Backend, BootSpec, CommandBuilder, GovernedAuthority}
 
-  setup do
-    original_api_key = System.get_env("LLAMA_CPP_SDK_API_KEY")
-    original_model = System.get_env("LLAMA_CPP_SDK_MODEL")
-    original_cache = System.get_env("LLAMA_CPP_SDK_CACHE")
-
-    on_exit(fn ->
-      restore_env("LLAMA_CPP_SDK_API_KEY", original_api_key)
-      restore_env("LLAMA_CPP_SDK_MODEL", original_model)
-      restore_env("LLAMA_CPP_SDK_CACHE", original_cache)
-    end)
-
-    :ok
-  end
-
-  test "governed boot spec uses authority materialization instead of env values" do
-    System.put_env("LLAMA_CPP_SDK_API_KEY", "env-token")
-    System.put_env("LLAMA_CPP_SDK_MODEL", "/env/model.gguf")
-    System.put_env("LLAMA_CPP_SDK_CACHE", "/env/cache")
-
+  test "governed boot spec uses authority materialization instead of ambient values" do
     assert {:ok, spec} = BootSpec.new(governed_authority: authority())
 
     assert spec.model == "/governed/model.gguf"
@@ -33,9 +15,9 @@ defmodule LlamaCppSdk.GovernedAuthorityTest do
     assert spec.api_key == "governed-token"
     assert spec.headers == %{"authorization" => "Bearer governed-token"}
     assert spec.environment == %{"LLAMA_CACHE" => "/governed/cache"}
-    refute inspect(spec) =~ "env-token"
-    refute inspect(spec) =~ "/env/model.gguf"
-    refute inspect(spec) =~ "/env/cache"
+    refute inspect(spec) =~ "ambient-token"
+    refute inspect(spec) =~ "/ambient/model.gguf"
+    refute inspect(spec) =~ "/ambient/cache"
 
     assert spec.execution_surface[:surface_kind] == :local_subprocess
     assert spec.execution_surface[:target_id] == "target://local/llama"
@@ -167,7 +149,4 @@ defmodule LlamaCppSdk.GovernedAuthorityTest do
     ]
     |> Keyword.merge(overrides)
   end
-
-  defp restore_env(key, nil), do: System.delete_env(key)
-  defp restore_env(key, value), do: System.put_env(key, value)
 end

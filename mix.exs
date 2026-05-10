@@ -1,12 +1,13 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule LlamaCppSdk.MixProject do
   use Mix.Project
 
   @version "0.1.0"
   @source_url "https://github.com/nshkrdotcom/llama_cpp_sdk"
   @homepage_url "https://hex.pm/packages/llama_cpp_sdk"
-  @execution_plane_version "~> 0.1.0"
-  @execution_plane_process_version "~> 0.1.0"
-  @self_hosted_inference_core_version "~> 0.1.0"
 
   def project do
     [
@@ -38,55 +39,13 @@ defmodule LlamaCppSdk.MixProject do
 
   defp deps do
     [
-      self_hosted_inference_core_dep(),
-      execution_plane_dep(),
-      execution_plane_process_dep(),
+      DependencySources.dep(:self_hosted_inference_core, __DIR__),
+      DependencySources.dep(:execution_plane, __DIR__),
+      DependencySources.dep(:execution_plane_process, __DIR__),
       {:ex_doc, "~> 0.40", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: :dev, runtime: false}
     ]
-  end
-
-  defp self_hosted_inference_core_dep do
-    case local_dep_path("../self_hosted_inference_core") do
-      nil -> {:self_hosted_inference_core, @self_hosted_inference_core_version}
-      path -> {:self_hosted_inference_core, path: path}
-    end
-  end
-
-  defp execution_plane_dep do
-    case local_dep_path("../execution_plane/core/execution_plane") do
-      nil -> {:execution_plane, @execution_plane_version}
-      path -> {:execution_plane, path: path}
-    end
-  end
-
-  defp execution_plane_process_dep do
-    case execution_plane_workspace_dep_path("runtimes/execution_plane_process") do
-      nil -> {:execution_plane_process, @execution_plane_process_version}
-      path -> {:execution_plane_process, path: path}
-    end
-  end
-
-  defp execution_plane_workspace_dep_path(relative_child_path) do
-    "../execution_plane"
-    |> Path.join(relative_child_path)
-    |> local_dep_path()
-  end
-
-  defp local_dep_path(relative_path) do
-    if local_workspace_deps?() do
-      path = Path.expand(relative_path, __DIR__)
-      if File.dir?(path), do: path
-    end
-  end
-
-  defp local_workspace_deps? do
-    not hex_packaging_task?() and not Enum.member?(Path.split(__DIR__), "deps")
-  end
-
-  defp hex_packaging_task? do
-    Enum.any?(System.argv(), &(&1 in ["hex.build", "hex.publish"]))
   end
 
   defp description do
@@ -160,12 +119,14 @@ defmodule LlamaCppSdk.MixProject do
       },
       files: [
         "lib",
+        "build_support",
         "assets/*.svg",
         ".formatter.exs",
         "mix.exs",
         "README.md",
         "CHANGELOG.md",
-        "LICENSE"
+        "LICENSE",
+        "AGENTS.md"
       ]
     ]
   end
