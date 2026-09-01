@@ -1,17 +1,7 @@
-# `build_support/` is not shipped in the published package, so its absence is
-# how this file knows it is running inside a consumer's deps/ rather than in a
-# source checkout. Guard on the file, not on a directory shape: a shape test
-# breaks when the repo is vendored at a different depth or used as a git dep.
-workspace_helper = Path.expand("build_support/dependency_sources.exs", __DIR__)
-
-if File.regular?(workspace_helper) and not Code.ensure_loaded?(DependencySources) do
-  Code.require_file(workspace_helper)
-end
+if bootstrap = System.get_env("MIX_WORKSPACE_OPS_BOOTSTRAP"), do: Code.require_file(bootstrap)
 
 defmodule LlamaCppSdk.MixProject do
   use Mix.Project
-
-  @workspace_checkout? File.regular?(Path.expand("build_support/dependency_sources.exs", __DIR__))
 
   @version "0.1.0"
   @source_url "https://github.com/nshkrdotcom/llama_cpp_sdk"
@@ -47,9 +37,9 @@ defmodule LlamaCppSdk.MixProject do
 
   defp deps do
     [
-      workspace_dep(:self_hosted_inference_core, "~> 0.1.0"),
-      workspace_dep(:execution_plane, "~> 0.1.0"),
-      workspace_dep(:execution_plane_process, "~> 0.1.0"),
+      workspace_dep({:self_hosted_inference_core, "~> 0.1.0"}),
+      workspace_dep({:execution_plane, "~> 0.1.0"}),
+      workspace_dep({:execution_plane_process, "~> 0.1.0"}),
       {:ex_doc, "~> 0.40", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: :dev, runtime: false}
@@ -116,16 +106,10 @@ defmodule LlamaCppSdk.MixProject do
     ]
   end
 
-
-  # In a source checkout the registry decides the source (path first). In a
-  # published package there is no registry, and the requirement stated here is
-  # the whole answer.
-  defp workspace_dep(app, hex_requirement, opts \\ []) do
-    if @workspace_checkout? do
-      apply(DependencySources, :dep, [app, __DIR__, opts])
-    else
-      if opts == [], do: {app, hex_requirement}, else: {app, hex_requirement, opts}
-    end
+  defp workspace_dep(committed) do
+    if function_exported?(MixWorkspaceOpsBootstrap, :dep, 2),
+      do: apply(MixWorkspaceOpsBootstrap, :dep, [committed, __DIR__]),
+      else: committed
   end
 
   defp package do
@@ -139,7 +123,6 @@ defmodule LlamaCppSdk.MixProject do
       },
       files: [
         "lib",
-        "build_support",
         "assets/*.svg",
         ".formatter.exs",
         "mix.exs",

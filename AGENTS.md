@@ -20,12 +20,12 @@
 
 ## Dependency Sources
 
-- Cross-repo dependency selection belongs in
-  `build_support/dependency_sources.config.exs` and is consumed through the
-  canonical `build_support/dependency_sources.exs` helper.
-- Machine-local dependency overrides belong in `.dependency_sources.local.exs`.
-  Keep that file untracked.
-- Dependency source selection must not read environment variables.
+- Committed dependency tuples remain ordinary Hex requirements so standalone
+  clones and published consumers work without workspace tooling. Managed
+  development loads the MWO bootstrap and gets eligible source coordinates
+  from Portfolio Registry; operator preferences stay outside this repository.
+- MWO's process-scoped bootstrap pointer is the only dependency-management
+  environment input read by `mix.exs`; publish mode remains Hex-only.
 
 ## Runtime Environment
 
